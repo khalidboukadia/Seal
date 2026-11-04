@@ -19,8 +19,15 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # [CI-FIX] Disabled (commented out, not deleted): android-actions/setup-android@v3 currently
+      # fails with "Failed to find package 'tools'" before the build even starts. The runner image
+      # already ships the Android SDK, so we only need to accept its licenses.
+      # - name: Setup Android SDK
+      #   uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: |
+          SDKM=$(command -v sdkmanager || ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | head -1)
+          yes | "$SDKM" --licenses > /dev/null || true
 
       - uses: gradle/actions/setup-gradle@v3
       - name: Grant execute permission for gradlew
