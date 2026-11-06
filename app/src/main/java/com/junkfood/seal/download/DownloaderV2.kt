@@ -32,6 +32,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -258,6 +259,7 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                         taskKey = id,
                     )
                     .onSuccess {
+                        if (task.downloadState is Canceled) return@onSuccess
                         info = it
                         downloadState = ReadyWithInfo
                         viewState = Task.ViewState.fromVideoInfo(it)
@@ -309,6 +311,7 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                         },
                     )
                     .onSuccess { pathList ->
+                        if (downloadState is Canceled) return@onSuccess
                         downloadState = Completed(pathList.firstOrNull())
 
                         val text =
@@ -352,15 +355,25 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
     private fun Task.cancelImpl(): Boolean {
         when (val preState = downloadState) {
             is DownloadState.Cancelable -> {
-                val res = YoutubeDL.destroyProcessById(preState.taskId)
-                if (res) {
-                    preState.job.cancel()
-                    val progress = if (preState is Running) preState.progress else null
-                    NotificationUtil.cancelNotification(notificationId)
-                    downloadState =
-                        DownloadState.Canceled(action = preState.action, progress = progress)
+                // [FIX] Cancel immediately on the first press. The state is switched to Canceled
+                // FIRST so that no late progress callback can post the notification again, and the
+                // task is reported as canceled even if yt-dlp has not registered its process yet.
+                val progress = if (preState is Running) preState.progress else null
+                downloadState = DownloadState.Canceled(action = preState.action, progress = progress)
+                NotificationUtil.cancelNotification(notificationId)
+                preState.job.cancel()
+                if (!YoutubeDL.destroyProcessById(preState.taskId)) {
+                    // The process is not running yet (still starting): keep trying for a few
+                    // seconds so it is killed the moment it appears. Stop if the task is resumed.
+                    scope.launch(Dispatchers.IO) {
+                        repeat(50) {
+                            delay(200)
+                            if (downloadState !is DownloadState.Canceled) return@launch
+                            if (YoutubeDL.destroyProcessById(preState.taskId)) return@launch
+                        }
+                    }
                 }
-                return res
+                return true
             }
             Idle -> {
                 downloadState = DownloadState.Canceled(action = FetchInfo)

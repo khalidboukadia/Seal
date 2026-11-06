@@ -528,6 +528,8 @@ object DownloadUtil {
                     4 -> "res:720"
                     5 -> "res:480"
                     6 -> "res:360"
+                    8 -> "res:240"
+                    9 -> "res:144"
                     7 -> "+res"
                     else -> ""
                 }

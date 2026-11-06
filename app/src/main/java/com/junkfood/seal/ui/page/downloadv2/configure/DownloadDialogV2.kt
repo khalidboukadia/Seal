@@ -132,6 +132,7 @@ import com.junkfood.seal.util.DownloadType.Video
 import com.junkfood.seal.util.DownloadType.entries
 import com.junkfood.seal.util.DownloadUtil
 import com.junkfood.seal.util.FORMAT_SELECTION
+import com.junkfood.seal.util.FORMAT_COMPATIBILITY
 import com.junkfood.seal.util.PreferenceStrings
 import com.junkfood.seal.util.PreferenceUtil
 import com.junkfood.seal.util.PreferenceUtil.getBoolean
@@ -549,7 +550,7 @@ private fun SimpleSharePage(
     val qualityType = if (selectedType == Audio) Audio else Video
     val qualityText =
         if (qualityType == Audio) PreferenceStrings.getAudioPresetText(preferences)
-        else PreferenceStrings.getVideoPresetText(preferences)
+        else PreferenceStrings.getVideoResolutionDesc(preferences.videoResolution)
 
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
         DownloadTypeSelectionGroup(
@@ -589,14 +590,23 @@ private fun SimpleSharePage(
                     onActionPost(
                         Action.DownloadFullPlaylist(
                             url = url,
-                            preferences = preferences.copy(extractAudio = false),
+                            preferences =
+                                preferences.copy(
+                                    extractAudio = false,
+                                    videoFormat = FORMAT_COMPATIBILITY,
+                                ),
                         )
                     )
                 } else {
                     onActionPost(
                         Action.DownloadWithPreset(
                             urlList = listOf(url),
-                            preferences = preferences.copy(extractAudio = selectedType == Audio),
+                            preferences =
+                                preferences.copy(
+                                    extractAudio = selectedType == Audio,
+                                    // [SIMPLIFIED] always the most compatible video format (MP4)
+                                    videoFormat = FORMAT_COMPATIBILITY,
+                                ),
                         )
                     )
                 }

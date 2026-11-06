@@ -205,16 +205,17 @@ fun DownloadFormatPreferences(onNavigateBack: () -> Unit, navigateToSubtitlePage
                     // }
                 // }
                 item { PreferenceSubtitle(text = stringResource(id = R.string.video)) }
-                item {
-                    PreferenceItem(
-                        title = stringResource(R.string.video_format_preference),
-                        description = PreferenceStrings.getVideoFormatLabel(videoFormat),
-                        icon = Icons.Outlined.VideoFile,
-                        enabled = !audioSwitch && !isCustomCommandEnabled && !isFormatSortingEnabled,
-                    ) {
-                        showVideoFormatDialog = true
-                    }
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): video format (Legacy/Quality) choice
+                // item {
+                    // PreferenceItem(
+                        // title = stringResource(R.string.video_format_preference),
+                        // description = PreferenceStrings.getVideoFormatLabel(videoFormat),
+                        // icon = Icons.Outlined.VideoFile,
+                        // enabled = !audioSwitch && !isCustomCommandEnabled && !isFormatSortingEnabled,
+                    // ) {
+                        // showVideoFormatDialog = true
+                    // }
+                // }
                 item {
                     PreferenceItem(
                         title = stringResource(id = R.string.video_quality),

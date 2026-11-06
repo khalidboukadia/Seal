@@ -74,6 +74,8 @@ object NotificationUtil {
         text: String? = null,
     ) {
         if (!NOTIFICATION.getBoolean()) return
+        // [FIX] FLAG_UPDATE_CURRENT instead of FLAG_ONE_SHOT: a one-shot button stopped working after
+        // the first tap until the next progress refresh, which is why it needed several presses.
         val pendingIntent =
             taskId?.let {
                 Intent(context.applicationContext, NotificationActionReceiver::class.java)
@@ -85,7 +87,7 @@ object NotificationUtil {
                             context.applicationContext,
                             notificationId,
                             this,
-                            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                         )
                     }
             }
@@ -231,7 +233,7 @@ object NotificationUtil {
                 context.applicationContext,
                 notificationId,
                 intent,
-                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
 
         NotificationCompat.Builder(context, CHANNEL_ID)
