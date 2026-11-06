@@ -72,7 +72,7 @@ fun TroubleShootingPage(
                     )
                     val knownIssueUrlSeal = "https://github.com/JunkFood02/Seal/issues/1399"
                     PreferenceItem(
-                        title = "Seal Issue Tracker",
+                        title = "SnapKhalid Issue Tracker",
                         description = null,
                         icon = Icons.AutoMirrored.Outlined.OpenInNew,
                         onClick = { uriHandler.openUri(knownIssueUrlSeal) },
