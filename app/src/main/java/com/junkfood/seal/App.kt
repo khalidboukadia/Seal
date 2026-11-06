@@ -39,7 +39,8 @@ import com.junkfood.seal.util.UpdateUtil
 import com.junkfood.seal.util.VIDEO_DIRECTORY
 import com.junkfood.seal.util.YT_DLP_VERSION
 import com.tencent.mmkv.MMKV
-import com.yausername.aria2c.Aria2c
+// [SIMPLIFIED] aria2c removed to shrink the APK
+// import com.yausername.aria2c.Aria2c
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import java.io.File
@@ -90,7 +91,8 @@ class App : Application() {
             try {
                 YoutubeDL.init(this@App)
                 FFmpeg.init(this@App)
-                Aria2c.init(this@App)
+                // [SIMPLIFIED] aria2c removed to shrink the APK
+                // Aria2c.init(this@App)
                 DownloadUtil.getCookiesContentFromDatabase().getOrNull()?.let {
                     FileUtil.writeContentToFile(it, getCookiesFile())
                 }

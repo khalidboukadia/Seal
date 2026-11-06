@@ -142,7 +142,10 @@ androidxCompose = ["androidx-compose-ui",
 
 youtubedlAndroid = ["youtubedl-android-library",
     "youtubedl-android-ffmpeg",
-    "youtubedl-android-aria2c"]
+    # [SIMPLIFIED] aria2c removed to shrink the APK (the aria2c switch is hidden and off by default).
+    # To restore: uncomment the next line and the Aria2c lines in App.kt.
+    # "youtubedl-android-aria2c"
+    ]
 
 core = ["androidx-activity-compose",
     "android-material",
