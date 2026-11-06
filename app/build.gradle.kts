@@ -44,7 +44,7 @@ android {
     buildFeatures { buildConfig = true }
 
     defaultConfig {
-        applicationId = "com.junkfood.seal"
+        applicationId = "com.snapkhalid.app"
         minSdk = 24
         targetSdk = 35
         versionCode = 200_000_150
@@ -53,6 +53,10 @@ android {
         versionName = baseVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+
+        // [SIMPLIFIED] ship only English, Arabic and French strings to shrink the APK.
+        // Remove this line to bring back all languages.
+        resourceConfigurations += listOf("en", "ar", "fr")
 
         if (splitApks) {
             splits {
@@ -110,7 +114,7 @@ android {
             }
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            resValue("string", "app_name", "Seal Debug")
+            resValue("string", "app_name", "SnapKhalid Debug")
         }
     }
 
@@ -125,7 +129,7 @@ android {
         create("githubPreview") {
             dimension = "publishChannel"
             applicationIdSuffix = ".preview"
-            resValue("string", "app_name", "Seal Preview")
+            resValue("string", "app_name", "SnapKhalid Preview")
         }
 
         create("fdroid") {
@@ -139,7 +143,7 @@ android {
     applicationVariants.all {
         outputs.all {
             (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "Seal-${defaultConfig.versionName}-${name}.apk"
+                "SnapKhalid-${defaultConfig.versionName}-${name}.apk"
         }
     }
 
