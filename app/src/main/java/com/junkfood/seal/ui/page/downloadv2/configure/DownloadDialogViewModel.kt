@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.junkfood.seal.database.objects.CommandTemplate
 import com.junkfood.seal.download.DownloaderV2
 import com.junkfood.seal.download.Task
+import com.junkfood.seal.download.TaskFactory
 import com.junkfood.seal.util.DownloadUtil
 import com.junkfood.seal.util.PlaylistResult
 import com.junkfood.seal.util.VideoInfo
@@ -59,6 +60,12 @@ class DownloadDialogViewModel(private val downloader: DownloaderV2) : ViewModel(
             val preferences: DownloadUtil.DownloadPreferences,
         ) : Action
 
+        /** [SIMPLIFIED] added: download every item of a playlist at once, no selection page. */
+        data class DownloadFullPlaylist(
+            val url: String,
+            val preferences: DownloadUtil.DownloadPreferences,
+        ) : Action
+
         data class FetchFormats(
             val url: String,
             val audioOnly: Boolean,
@@ -98,6 +105,7 @@ class DownloadDialogViewModel(private val downloader: DownloaderV2) : ViewModel(
                 is Action.ProceedWithURLs -> proceedWithUrls(this)
                 is Action.FetchFormats -> fetchFormat(this)
                 is Action.FetchPlaylist -> fetchPlaylist(this)
+                is Action.DownloadFullPlaylist -> downloadFullPlaylist(this)
                 is Action.DownloadWithPreset -> downloadWithPreset(urlList, preferences)
                 is Action.RunCommand -> runCommand(url, template, preferences)
                 Action.HideSheet -> hideDialog()
@@ -141,6 +149,53 @@ class DownloadDialogViewModel(private val downloader: DownloaderV2) : ViewModel(
                     }
                     .onFailure { th ->
                         mSheetStateFlow.update { SheetState.Error(action = action, throwable = th) }
+                    }
+            }
+        mSheetStateFlow.update { SheetState.Loading(taskKey = "FetchPlaylist_$url", job = job) }
+    }
+
+    private fun downloadFullPlaylist(action: Action.DownloadFullPlaylist) {
+        val (url, preferences) = action
+
+        val job =
+            viewModelScope.launch(Dispatchers.IO) {
+                DownloadUtil.getPlaylistOrVideoInfo(
+                        playlistURL = url,
+                        downloadPreferences = preferences,
+                    )
+                    .onSuccess { info ->
+                        withContext(Dispatchers.Main) {
+                            when (info) {
+                                is PlaylistResult -> {
+                                    val count = info.entries?.size ?: 0
+                                    if (count > 0) {
+                                        TaskFactory.createWithPlaylistResult(
+                                                playlistUrl =
+                                                    info.originalUrl ?: info.webpageUrl.toString(),
+                                                indexList = (1..count).toList(),
+                                                playlistResult = info,
+                                                preferences = preferences,
+                                            )
+                                            .forEach(downloader::enqueue)
+                                    } else {
+                                        downloader.enqueue(
+                                            Task(url = url, preferences = preferences)
+                                        )
+                                    }
+                                }
+
+                                is VideoInfo -> {
+                                    // The link was a single video, not a playlist
+                                    downloader.enqueue(Task(url = url, preferences = preferences))
+                                }
+                            }
+                            hideDialog()
+                        }
+                    }
+                    .onFailure { th ->
+                        withContext(Dispatchers.Main) {
+                            mSheetStateFlow.update { SheetState.Error(action = action, throwable = th) }
+                        }
                     }
             }
         mSheetStateFlow.update { SheetState.Loading(taskKey = "FetchPlaylist_$url", job = job) }
