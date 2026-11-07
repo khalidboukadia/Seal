@@ -95,6 +95,12 @@ import com.junkfood.seal.util.PreferenceUtil
 import com.junkfood.seal.util.PreferenceUtil.updateBoolean
 import com.junkfood.seal.util.PreferenceUtil.updateInt
 import com.junkfood.seal.util.PreferenceUtil.updateString
+import com.junkfood.seal.util.RES_1080P
+import com.junkfood.seal.util.RES_144P
+import com.junkfood.seal.util.RES_240P
+import com.junkfood.seal.util.RES_360P
+import com.junkfood.seal.util.RES_480P
+import com.junkfood.seal.util.RES_720P
 import com.junkfood.seal.util.RES_HIGHEST
 import com.junkfood.seal.util.RES_LOWEST
 import com.junkfood.seal.util.SUBTITLE_LANGUAGE
@@ -187,7 +193,7 @@ fun VideoQuickSettingsDialog(
     SealDialog(
         onDismissRequest = onDismissRequest,
         icon = { Icon(Icons.Outlined.VideoFile, null) },
-        title = { Text(text = stringResource(id = R.string.edit_preset)) },
+        title = { Text(text = stringResource(id = R.string.video_quality)) },
         dismissButton = {
             OutlinedButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
         },
@@ -204,26 +210,50 @@ fun VideoQuickSettingsDialog(
         text = {
             Column {
                 LazyColumn() {
-                    item { DialogSubtitle(text = stringResource(R.string.video_format_preference)) }
-                    for (i in listOf(FORMAT_COMPATIBILITY, FORMAT_QUALITY)) {
+                    // [SIMPLIFIED] disabled (commented out, not deleted): the Legacy / Quality
+                    // format choice. Downloads now always use the most compatible format (MP4/H.264).
+                    // item { DialogSubtitle(text = stringResource(R.string.video_format_preference)) }
+                    // for (i in listOf(FORMAT_COMPATIBILITY, FORMAT_QUALITY)) {
+                    //     item {
+                    //         DialogSingleChoiceItemVariant(
+                    //             modifier = Modifier,
+                    //             title = PreferenceStrings.getVideoFormatLabel(i),
+                    //             desc = PreferenceStrings.getVideoFormatDescComp(i),
+                    //             selected = videoFormatPreference == i,
+                    //         ) {
+                    //             onFormatSelect(i)
+                    //         }
+                    //     }
+                    // }
+                    // item { DialogSubtitle(text = stringResource(R.string.video_resolution)) }
+                    // item {
+                    //     VideoResolutionSelectField(
+                    //         modifier = Modifier.padding(horizontal = 12.dp),
+                    //         videoResolution = videoResolution,
+                    //         onSelect = onResolutionSelect,
+                    //     )
+                    // }
+
+                    // [SIMPLIFIED] plain list of qualities, from best down to 144p, then lowest
+                    for (i in
+                        listOf(
+                            RES_HIGHEST,
+                            RES_1080P,
+                            RES_720P,
+                            RES_480P,
+                            RES_360P,
+                            RES_240P,
+                            RES_144P,
+                            RES_LOWEST,
+                        )) {
                         item {
-                            DialogSingleChoiceItemVariant(
-                                modifier = Modifier,
-                                title = PreferenceStrings.getVideoFormatLabel(i),
-                                desc = PreferenceStrings.getVideoFormatDescComp(i),
-                                selected = videoFormatPreference == i,
+                            DialogSingleChoiceItem(
+                                text = PreferenceStrings.getVideoResolutionDesc(i),
+                                selected = videoResolution == i,
                             ) {
-                                onFormatSelect(i)
+                                onResolutionSelect(i)
                             }
                         }
-                    }
-                    item { DialogSubtitle(text = stringResource(R.string.video_resolution)) }
-                    item {
-                        VideoResolutionSelectField(
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            videoResolution = videoResolution,
-                            onSelect = onResolutionSelect,
-                        )
                     }
                 }
             }

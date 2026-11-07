@@ -46,6 +46,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.HighQuality
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.NewLabel
 import androidx.compose.material.icons.outlined.SettingsSuggest
@@ -131,6 +132,7 @@ import com.junkfood.seal.util.DownloadType.Video
 import com.junkfood.seal.util.DownloadType.entries
 import com.junkfood.seal.util.DownloadUtil
 import com.junkfood.seal.util.FORMAT_SELECTION
+import com.junkfood.seal.util.FORMAT_COMPATIBILITY
 import com.junkfood.seal.util.PreferenceStrings
 import com.junkfood.seal.util.PreferenceUtil
 import com.junkfood.seal.util.PreferenceUtil.getBoolean
@@ -285,6 +287,7 @@ private fun ErrorPage(modifier: Modifier = Modifier, state: Error, onActionPost:
             when (this) {
                 is Action.FetchFormats -> url
                 is Action.FetchPlaylist -> url
+                is Action.DownloadFullPlaylist -> url
                 else -> {
                     throw IllegalArgumentException()
                 }
@@ -355,7 +358,7 @@ private fun DownloadDialogContent(
             is Configure -> {
                 check(state.urlList.isNotEmpty())
                 if (state.urlList.size == 1) {
-                    ConfigurePage(
+                    SimpleSharePage(
                         url = state.urlList.first(),
                         config = config,
                         preferences = preferences,
@@ -363,21 +366,32 @@ private fun DownloadDialogContent(
                         onConfigSave = {
                             Config.updatePreferences(newValue = it, oldValue = config)
                         },
-                        settingChips = {
-                            AdditionalSettings(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                isQuickDownload = false,
-                                preference = preferences,
-                                selectedType = config.downloadType,
-                                onPreferenceUpdate = {
-                                    onPreferencesUpdate(
-                                        DownloadUtil.DownloadPreferences.createFromPreferences()
-                                    )
-                                },
-                            )
-                        },
                         onActionPost = { onActionPost(it) },
                     )
+                    // [SIMPLIFIED] disabled (commented out, not deleted): old detailed page (replaced by SimpleSharePage)
+                    // ConfigurePage(
+                        // url = state.urlList.first(),
+                        // config = config,
+                        // preferences = preferences,
+                        // onPresetEdit = onPresetEdit,
+                        // onConfigSave = {
+                            // Config.updatePreferences(newValue = it, oldValue = config)
+                        // },
+                        // settingChips = {
+                            // AdditionalSettings(
+                                // modifier = Modifier.padding(horizontal = 16.dp),
+                                // isQuickDownload = false,
+                                // preference = preferences,
+                                // selectedType = config.downloadType,
+                                // onPreferenceUpdate = {
+                                    // onPreferencesUpdate(
+                                        // DownloadUtil.DownloadPreferences.createFromPreferences()
+                                    // )
+                                // },
+                            // )
+                        // },
+                        // onActionPost = { onActionPost(it) },
+                    // )
                 } else {
                     ConfigurePagePlaylistVariant(
                         initialDownloadType = config.downloadType ?: Video,
@@ -509,6 +523,118 @@ private fun ConfigurePagePreview() {
                 settingChips = {},
             ) {}
         }
+    }
+}
+
+/**
+ * [SIMPLIFIED] The only download page: pick Video / Audio / Full playlist, a button that opens the
+ * quality dialog for the chosen type, and the download button. Nothing else.
+ *
+ * The previous, more detailed page is kept below as [ConfigurePage] but is no longer used.
+ */
+@Composable
+private fun SimpleSharePage(
+    modifier: Modifier = Modifier,
+    url: String,
+    config: Config,
+    preferences: DownloadUtil.DownloadPreferences,
+    onPresetEdit: (DownloadType?) -> Unit,
+    onConfigSave: (Config) -> Unit,
+    onActionPost: (Action) -> Unit,
+) {
+    val typeEntries = listOf(Video, Audio, Playlist)
+    var selectedType by
+        remember(config) { mutableStateOf(config.downloadType?.takeIf { it in typeEntries } ?: Video) }
+
+    // A full playlist is downloaded as video, so it uses the video quality settings.
+    val qualityType = if (selectedType == Audio) Audio else Video
+    val qualityText =
+        if (qualityType == Audio) PreferenceStrings.getAudioPresetText(preferences)
+        else PreferenceStrings.getVideoResolutionDesc(preferences.videoResolution)
+
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
+        DownloadTypeSelectionGroup(
+            typeEntries = typeEntries,
+            selectedType = selectedType,
+            onSelect = { selectedType = it },
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // [SIMPLIFIED] Audio has no options: it is always the best quality, automatically.
+        if (qualityType == Audio) {
+            Text(
+                text = stringResource(R.string.quality) + ": " + stringResource(R.string.best_quality),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            )
+        } else
+        FilledTonalButton(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { onPresetEdit(qualityType) },
+            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.HighQuality,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = stringResource(R.string.quality) + ": " + qualityText,
+                modifier = Modifier.padding(start = 8.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+            onClick = {
+                onConfigSave(config.copy(useFormatSelection = false, downloadType = selectedType))
+                if (selectedType == Playlist) {
+                    onActionPost(
+                        Action.DownloadFullPlaylist(
+                            url = url,
+                            preferences =
+                                preferences.copy(
+                                    extractAudio = false,
+                                    videoFormat = FORMAT_COMPATIBILITY,
+                                ),
+                        )
+                    )
+                } else {
+                    onActionPost(
+                        Action.DownloadWithPreset(
+                            urlList = listOf(url),
+                            preferences =
+                                preferences.copy(
+                                    extractAudio = selectedType == Audio,
+                                    // [SIMPLIFIED] best audio, AAC/M4A: plays on every phone,
+                                    // headphones and speaker, no re-encoding (no quality loss)
+                                    useCustomAudioPreset = true,
+                                    audioFormat = com.junkfood.seal.util.M4A,
+                                    audioQuality = com.junkfood.seal.util.NOT_SPECIFIED,
+                                    convertAudio = false,
+                                    // [SIMPLIFIED] always the most compatible video format (MP4)
+                                    videoFormat = FORMAT_COMPATIBILITY,
+                                ),
+                        )
+                    )
+                }
+            },
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.FileDownload,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(text = stringResource(R.string.download), modifier = Modifier.padding(start = 8.dp))
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 

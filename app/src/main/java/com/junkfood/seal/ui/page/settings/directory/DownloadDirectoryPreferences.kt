@@ -297,92 +297,101 @@ fun DownloadDirectoryPreferences(onNavigateBack: () -> Unit) {
                     }
                 }
             }
-            item {
-                PreferenceItem(
-                    title = stringResource(id = R.string.custom_command_directory),
-                    description =
-                        customCommandDirectory.ifEmpty {
-                            stringResource(id = R.string.set_directory_desc)
-                        },
-                    icon = Icons.Outlined.Folder,
-                ) {
-                    showCustomCommandDirectoryDialog = true
-                }
-            }
-            item {
-                PreferenceSwitchWithDivider(
-                    title = stringResource(id = R.string.sdcard_directory),
-                    description =
-                        sdcardUri.ifEmpty { stringResource(id = R.string.set_directory_desc) },
-                    isChecked = sdcardDownload,
-                    enabled = !isCustomCommandEnabled,
-                    isSwitchEnabled = !isCustomCommandEnabled,
-                    onChecked = {
-                        if (sdcardUri.isNotEmpty()) {
-                            sdcardDownload = !sdcardDownload
-                            PreferenceUtil.updateValue(SDCARD_DOWNLOAD, sdcardDownload)
-                        } else {
-                            openDirectoryChooser(Directory.SDCARD)
-                        }
-                    },
-                    icon = Icons.Outlined.SdCard,
-                    onClick = { openDirectoryChooser(Directory.SDCARD) },
-                )
-            }
-            item {
-                PreferenceItem(
-                    title = stringResource(id = R.string.subdirectory),
-                    description = stringResource(id = R.string.subdirectory_desc),
-                    icon = Icons.Outlined.SnippetFolder,
-                    enabled = !isCustomCommandEnabled && !sdcardDownload,
-                ) {
-                    showSubdirectoryDialog = true
-                }
-            }
-            item { PreferenceSubtitle(text = stringResource(R.string.privacy)) }
-            item {
-                PreferenceSwitch(
-                    title = stringResource(id = R.string.private_directory),
-                    description = stringResource(R.string.private_directory_desc),
-                    icon = Icons.Outlined.TabUnselected,
-                    enabled = !showDirectoryAlert && !sdcardDownload && !isCustomCommandEnabled,
-                    isChecked = isPrivateDirectoryEnabled,
-                    onClick = {
-                        isPrivateDirectoryEnabled = !isPrivateDirectoryEnabled
-                        PreferenceUtil.updateValue(PRIVATE_DIRECTORY, isPrivateDirectoryEnabled)
-                    },
-                )
-            }
-            item { PreferenceSubtitle(text = stringResource(R.string.advanced_settings)) }
-            item {
-                PreferenceItem(
-                    title = stringResource(R.string.output_template),
-                    description = stringResource(id = R.string.output_template_desc),
-                    icon = Icons.Outlined.FolderSpecial,
-                    enabled = !isCustomCommandEnabled && !sdcardDownload,
-                    onClick = { showOutputTemplateDialog = true },
-                )
-            }
-            item {
-                var restrictFilenames by RESTRICT_FILENAMES.booleanState
-                PreferenceSwitch(
-                    title = stringResource(id = R.string.restrict_filenames),
-                    icon = Icons.Outlined.Spellcheck,
-                    description = stringResource(id = R.string.restrict_filenames_desc),
-                    isChecked = restrictFilenames,
-                ) {
-                    restrictFilenames = !restrictFilenames
-                    RESTRICT_FILENAMES.updateBoolean(restrictFilenames)
-                }
-            }
-            item {
-                PreferenceItem(
-                    title = stringResource(R.string.clear_temp_files),
-                    description = stringResource(R.string.clear_temp_files_desc),
-                    icon = Icons.Outlined.FolderDelete,
-                    onClick = { showClearTempDialog = true },
-                )
-            }
+            // [SIMPLIFIED] disabled (commented out, not deleted): custom command directory
+            // item {
+                // PreferenceItem(
+                    // title = stringResource(id = R.string.custom_command_directory),
+                    // description =
+                        // customCommandDirectory.ifEmpty {
+                            // stringResource(id = R.string.set_directory_desc)
+                        // },
+                    // icon = Icons.Outlined.Folder,
+                // ) {
+                    // showCustomCommandDirectoryDialog = true
+                // }
+            // }
+            // [SIMPLIFIED] disabled (commented out, not deleted): sd card directory
+            // item {
+                // PreferenceSwitchWithDivider(
+                    // title = stringResource(id = R.string.sdcard_directory),
+                    // description =
+                        // sdcardUri.ifEmpty { stringResource(id = R.string.set_directory_desc) },
+                    // isChecked = sdcardDownload,
+                    // enabled = !isCustomCommandEnabled,
+                    // isSwitchEnabled = !isCustomCommandEnabled,
+                    // onChecked = {
+                        // if (sdcardUri.isNotEmpty()) {
+                            // sdcardDownload = !sdcardDownload
+                            // PreferenceUtil.updateValue(SDCARD_DOWNLOAD, sdcardDownload)
+                        // } else {
+                            // openDirectoryChooser(Directory.SDCARD)
+                        // }
+                    // },
+                    // icon = Icons.Outlined.SdCard,
+                    // onClick = { openDirectoryChooser(Directory.SDCARD) },
+                // )
+            // }
+            // [SIMPLIFIED] disabled (commented out, not deleted): subdirectory
+            // item {
+                // PreferenceItem(
+                    // title = stringResource(id = R.string.subdirectory),
+                    // description = stringResource(id = R.string.subdirectory_desc),
+                    // icon = Icons.Outlined.SnippetFolder,
+                    // enabled = !isCustomCommandEnabled && !sdcardDownload,
+                // ) {
+                    // showSubdirectoryDialog = true
+                // }
+            // }
+            // [SIMPLIFIED] disabled (commented out, not deleted): privacy subtitle
+            // item { PreferenceSubtitle(text = stringResource(R.string.privacy)) }
+            // [SIMPLIFIED] disabled (commented out, not deleted): private directory
+            // item {
+                // PreferenceSwitch(
+                    // title = stringResource(id = R.string.private_directory),
+                    // description = stringResource(R.string.private_directory_desc),
+                    // icon = Icons.Outlined.TabUnselected,
+                    // enabled = !showDirectoryAlert && !sdcardDownload && !isCustomCommandEnabled,
+                    // isChecked = isPrivateDirectoryEnabled,
+                    // onClick = {
+                        // isPrivateDirectoryEnabled = !isPrivateDirectoryEnabled
+                        // PreferenceUtil.updateValue(PRIVATE_DIRECTORY, isPrivateDirectoryEnabled)
+                    // },
+                // )
+            // }
+            // [SIMPLIFIED] disabled (commented out, not deleted): advanced subtitle
+            // item { PreferenceSubtitle(text = stringResource(R.string.advanced_settings)) }
+            // [SIMPLIFIED] disabled (commented out, not deleted): output template
+            // item {
+                // PreferenceItem(
+                    // title = stringResource(R.string.output_template),
+                    // description = stringResource(id = R.string.output_template_desc),
+                    // icon = Icons.Outlined.FolderSpecial,
+                    // enabled = !isCustomCommandEnabled && !sdcardDownload,
+                    // onClick = { showOutputTemplateDialog = true },
+                // )
+            // }
+            // [SIMPLIFIED] disabled (commented out, not deleted): restrict filenames
+            // item {
+                // var restrictFilenames by RESTRICT_FILENAMES.booleanState
+                // PreferenceSwitch(
+                    // title = stringResource(id = R.string.restrict_filenames),
+                    // icon = Icons.Outlined.Spellcheck,
+                    // description = stringResource(id = R.string.restrict_filenames_desc),
+                    // isChecked = restrictFilenames,
+                // ) {
+                    // restrictFilenames = !restrictFilenames
+                    // RESTRICT_FILENAMES.updateBoolean(restrictFilenames)
+                // }
+            // }
+            // [SIMPLIFIED] disabled (commented out, not deleted): clear temp files
+            // item {
+                // PreferenceItem(
+                    // title = stringResource(R.string.clear_temp_files),
+                    // description = stringResource(R.string.clear_temp_files_desc),
+                    // icon = Icons.Outlined.FolderDelete,
+                    // onClick = { showClearTempDialog = true },
+                // )
+            // }
         }
     }
 

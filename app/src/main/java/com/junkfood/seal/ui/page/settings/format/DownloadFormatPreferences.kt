@@ -127,20 +127,22 @@ fun DownloadFormatPreferences(onNavigateBack: () -> Unit, navigateToSubtitlePage
                             text = stringResource(id = R.string.custom_command_enabled_hint)
                         )
                     }
-                item { PreferenceSubtitle(text = stringResource(id = R.string.audio)) }
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(id = R.string.extract_audio),
-                        description = stringResource(id = R.string.extract_audio_summary),
-                        icon = Icons.Outlined.MusicNote,
-                        isChecked = audioSwitch,
-                        enabled = !isCustomCommandEnabled,
-                        onClick = {
-                            audioSwitch = !audioSwitch
-                            PreferenceUtil.updateValue(EXTRACT_AUDIO, audioSwitch)
-                        },
-                    )
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): audio subtitle header (all audio items hidden)
+                // item { PreferenceSubtitle(text = stringResource(id = R.string.audio)) }
+                // [SIMPLIFIED] disabled (commented out, not deleted): extract audio switch
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(id = R.string.extract_audio),
+                        // description = stringResource(id = R.string.extract_audio_summary),
+                        // icon = Icons.Outlined.MusicNote,
+                        // isChecked = audioSwitch,
+                        // enabled = !isCustomCommandEnabled,
+                        // onClick = {
+                            // audioSwitch = !audioSwitch
+                            // PreferenceUtil.updateValue(EXTRACT_AUDIO, audioSwitch)
+                        // },
+                    // )
+                // }
                 //                item {
                 //                    PreferenceItem(title = stringResource(id =
                 // R.string.audio_format_preference),
@@ -160,56 +162,60 @@ fun DownloadFormatPreferences(onNavigateBack: () -> Unit, navigateToSubtitlePage
                 // !isFormatSortingEnabled
                 //                    )
                 //                }
-                item {
-                    PreferenceSwitchWithDivider(
-                        title = stringResource(R.string.convert_audio_format),
-                        description = PreferenceStrings.getAudioConvertDesc(convertFormat),
-                        icon = Icons.Outlined.Sync,
-                        enabled = audioSwitch && !isCustomCommandEnabled,
-                        onClick = { showAudioConvertDialog = true },
-                        isChecked = convertAudio,
-                        onChecked = {
-                            convertAudio = !convertAudio
-                            AUDIO_CONVERT.updateBoolean(convertAudio)
-                        },
-                    )
-                }
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(id = R.string.embed_metadata),
-                        description = stringResource(id = R.string.embed_metadata_desc),
-                        enabled = audioSwitch && !isCustomCommandEnabled,
-                        isChecked = embedMetadata,
-                        icon = Icons.Outlined.ArtTrack,
-                        onClick = {
-                            embedMetadata = !embedMetadata
-                            EMBED_METADATA.updateBoolean(embedMetadata)
-                        },
-                    )
-                }
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(R.string.crop_artwork),
-                        description = stringResource(R.string.crop_artwork_desc),
-                        icon = Icons.Outlined.Crop,
-                        enabled = embedMetadata && audioSwitch && !isCustomCommandEnabled,
-                        isChecked = isArtworkCroppingEnabled,
-                    ) {
-                        isArtworkCroppingEnabled = !isArtworkCroppingEnabled
-                        PreferenceUtil.updateValue(CROP_ARTWORK, isArtworkCroppingEnabled)
-                    }
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): convert audio format
+                // item {
+                    // PreferenceSwitchWithDivider(
+                        // title = stringResource(R.string.convert_audio_format),
+                        // description = PreferenceStrings.getAudioConvertDesc(convertFormat),
+                        // icon = Icons.Outlined.Sync,
+                        // enabled = audioSwitch && !isCustomCommandEnabled,
+                        // onClick = { showAudioConvertDialog = true },
+                        // isChecked = convertAudio,
+                        // onChecked = {
+                            // convertAudio = !convertAudio
+                            // AUDIO_CONVERT.updateBoolean(convertAudio)
+                        // },
+                    // )
+                // }
+                // [SIMPLIFIED] disabled (commented out, not deleted): embed metadata
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(id = R.string.embed_metadata),
+                        // description = stringResource(id = R.string.embed_metadata_desc),
+                        // enabled = audioSwitch && !isCustomCommandEnabled,
+                        // isChecked = embedMetadata,
+                        // icon = Icons.Outlined.ArtTrack,
+                        // onClick = {
+                            // embedMetadata = !embedMetadata
+                            // EMBED_METADATA.updateBoolean(embedMetadata)
+                        // },
+                    // )
+                // }
+                // [SIMPLIFIED] disabled (commented out, not deleted): crop artwork
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(R.string.crop_artwork),
+                        // description = stringResource(R.string.crop_artwork_desc),
+                        // icon = Icons.Outlined.Crop,
+                        // enabled = embedMetadata && audioSwitch && !isCustomCommandEnabled,
+                        // isChecked = isArtworkCroppingEnabled,
+                    // ) {
+                        // isArtworkCroppingEnabled = !isArtworkCroppingEnabled
+                        // PreferenceUtil.updateValue(CROP_ARTWORK, isArtworkCroppingEnabled)
+                    // }
+                // }
                 item { PreferenceSubtitle(text = stringResource(id = R.string.video)) }
-                item {
-                    PreferenceItem(
-                        title = stringResource(R.string.video_format_preference),
-                        description = PreferenceStrings.getVideoFormatLabel(videoFormat),
-                        icon = Icons.Outlined.VideoFile,
-                        enabled = !audioSwitch && !isCustomCommandEnabled && !isFormatSortingEnabled,
-                    ) {
-                        showVideoFormatDialog = true
-                    }
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): video format (Legacy/Quality) choice
+                // item {
+                    // PreferenceItem(
+                        // title = stringResource(R.string.video_format_preference),
+                        // description = PreferenceStrings.getVideoFormatLabel(videoFormat),
+                        // icon = Icons.Outlined.VideoFile,
+                        // enabled = !audioSwitch && !isCustomCommandEnabled && !isFormatSortingEnabled,
+                    // ) {
+                        // showVideoFormatDialog = true
+                    // }
+                // }
                 item {
                     PreferenceItem(
                         title = stringResource(id = R.string.video_quality),
@@ -234,97 +240,105 @@ fun DownloadFormatPreferences(onNavigateBack: () -> Unit, navigateToSubtitlePage
                       }
                   }*/
 
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(id = R.string.remux_container_mkv),
-                        description = stringResource(id = R.string.remux_container_mkv_desc),
-                        isChecked = (downloadSubtitle && embedSubtitle) || remuxToMkv,
-                        icon = Icons.Outlined.Movie,
-                        enabled =
-                            !(downloadSubtitle && embedSubtitle) &&
-                                !isCustomCommandEnabled &&
-                                !audioSwitch,
-                        onClick = {
-                            remuxToMkv = !remuxToMkv
-                            MERGE_OUTPUT_MKV.updateBoolean(remuxToMkv)
-                        },
-                    )
-                }
-                if (downloadSubtitle && embedSubtitle) {
-                    item {
-                        PreferenceInfo(text = stringResource(id = R.string.embed_subtitles_mkv_msg))
-                    }
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): remux to mkv
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(id = R.string.remux_container_mkv),
+                        // description = stringResource(id = R.string.remux_container_mkv_desc),
+                        // isChecked = (downloadSubtitle && embedSubtitle) || remuxToMkv,
+                        // icon = Icons.Outlined.Movie,
+                        // enabled =
+                            // !(downloadSubtitle && embedSubtitle) &&
+                                // !isCustomCommandEnabled &&
+                                // !audioSwitch,
+                        // onClick = {
+                            // remuxToMkv = !remuxToMkv
+                            // MERGE_OUTPUT_MKV.updateBoolean(remuxToMkv)
+                        // },
+                    // )
+                // }
+                // [SIMPLIFIED] disabled (commented out, not deleted): subtitle/mkv hint
+                // if (downloadSubtitle && embedSubtitle) {
+                    // item {
+                        // PreferenceInfo(text = stringResource(id = R.string.embed_subtitles_mkv_msg))
+                    // }
+                // }
 
-                item { PreferenceSubtitle(text = stringResource(id = R.string.advanced_settings)) }
-                item {
-                    PreferenceItem(
-                        title = stringResource(id = R.string.subtitle),
-                        icon = Icons.Outlined.Subtitles,
-                        enabled = !isCustomCommandEnabled,
-                        description = stringResource(id = R.string.subtitle_desc),
-                    ) {
-                        navigateToSubtitlePage()
-                    }
-                }
-                item {
-                    PreferenceSwitchWithDivider(
-                        title = stringResource(id = R.string.format_sorting),
-                        icon = Icons.Outlined.Sort,
-                        description = stringResource(id = R.string.format_sorting_desc),
-                        enabled = !isCustomCommandEnabled,
-                        isChecked = isFormatSortingEnabled,
-                        onChecked = {
-                            isFormatSortingEnabled = !isFormatSortingEnabled
-                            FORMAT_SORTING.updateBoolean(isFormatSortingEnabled)
-                        },
-                        onClick = { showFormatSorterDialog = true },
-                    )
-                }
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(id = R.string.format_selection),
-                        icon = Icons.Outlined.VideoSettings,
-                        enabled = !isCustomCommandEnabled,
-                        description = stringResource(id = R.string.format_selection_desc),
-                        isChecked = isFormatSelectionEnabled,
-                    ) {
-                        isFormatSelectionEnabled = !isFormatSelectionEnabled
-                        PreferenceUtil.updateValue(FORMAT_SELECTION, isFormatSelectionEnabled)
-                    }
-                }
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(id = R.string.clip_video),
-                        description = stringResource(id = R.string.clip_video_desc),
-                        icon = Icons.Outlined.ContentCut,
-                        isChecked = isVideoClipEnabled,
-                        enabled = !isCustomCommandEnabled && isFormatSelectionEnabled,
-                    ) {
-                        if (!isVideoClipEnabled) showVideoClipDialog = true
-                        else {
-                            isVideoClipEnabled = false
-                            VIDEO_CLIP.updateBoolean(false)
-                        }
-                    }
-                }
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(id = R.string.merge_audiostream),
-                        description = stringResource(id = R.string.merge_audiostream_desc),
-                        isChecked = mergeAudioStream,
-                        icon = Icons.Outlined.SpatialAudioOff,
-                        onClick = {
-                            if (mergeAudioStream) {
-                                mergeAudioStream = false
-                                MERGE_MULTI_AUDIO_STREAM.updateBoolean(false)
-                            } else {
-                                showMergeAudioDialog = true
-                            }
-                        },
-                        enabled = !isCustomCommandEnabled && isFormatSelectionEnabled,
-                    )
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): advanced subtitle
+                // item { PreferenceSubtitle(text = stringResource(id = R.string.advanced_settings)) }
+                // [SIMPLIFIED] disabled (commented out, not deleted): subtitle settings
+                // item {
+                    // PreferenceItem(
+                        // title = stringResource(id = R.string.subtitle),
+                        // icon = Icons.Outlined.Subtitles,
+                        // enabled = !isCustomCommandEnabled,
+                        // description = stringResource(id = R.string.subtitle_desc),
+                    // ) {
+                        // navigateToSubtitlePage()
+                    // }
+                // }
+                // [SIMPLIFIED] disabled (commented out, not deleted): format sorting
+                // item {
+                    // PreferenceSwitchWithDivider(
+                        // title = stringResource(id = R.string.format_sorting),
+                        // icon = Icons.Outlined.Sort,
+                        // description = stringResource(id = R.string.format_sorting_desc),
+                        // enabled = !isCustomCommandEnabled,
+                        // isChecked = isFormatSortingEnabled,
+                        // onChecked = {
+                            // isFormatSortingEnabled = !isFormatSortingEnabled
+                            // FORMAT_SORTING.updateBoolean(isFormatSortingEnabled)
+                        // },
+                        // onClick = { showFormatSorterDialog = true },
+                    // )
+                // }
+                // [SIMPLIFIED] disabled (commented out, not deleted): format selection
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(id = R.string.format_selection),
+                        // icon = Icons.Outlined.VideoSettings,
+                        // enabled = !isCustomCommandEnabled,
+                        // description = stringResource(id = R.string.format_selection_desc),
+                        // isChecked = isFormatSelectionEnabled,
+                    // ) {
+                        // isFormatSelectionEnabled = !isFormatSelectionEnabled
+                        // PreferenceUtil.updateValue(FORMAT_SELECTION, isFormatSelectionEnabled)
+                    // }
+                // }
+                // [SIMPLIFIED] disabled (commented out, not deleted): clip video
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(id = R.string.clip_video),
+                        // description = stringResource(id = R.string.clip_video_desc),
+                        // icon = Icons.Outlined.ContentCut,
+                        // isChecked = isVideoClipEnabled,
+                        // enabled = !isCustomCommandEnabled && isFormatSelectionEnabled,
+                    // ) {
+                        // if (!isVideoClipEnabled) showVideoClipDialog = true
+                        // else {
+                            // isVideoClipEnabled = false
+                            // VIDEO_CLIP.updateBoolean(false)
+                        // }
+                    // }
+                // }
+                // [SIMPLIFIED] disabled (commented out, not deleted): merge audio streams
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(id = R.string.merge_audiostream),
+                        // description = stringResource(id = R.string.merge_audiostream_desc),
+                        // isChecked = mergeAudioStream,
+                        // icon = Icons.Outlined.SpatialAudioOff,
+                        // onClick = {
+                            // if (mergeAudioStream) {
+                                // mergeAudioStream = false
+                                // MERGE_MULTI_AUDIO_STREAM.updateBoolean(false)
+                            // } else {
+                                // showMergeAudioDialog = true
+                            // }
+                        // },
+                        // enabled = !isCustomCommandEnabled && isFormatSelectionEnabled,
+                    // )
+                // }
             }
         },
     )
