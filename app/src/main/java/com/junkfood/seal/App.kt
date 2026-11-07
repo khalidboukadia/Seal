@@ -145,22 +145,33 @@ class App : Application() {
                 override fun onServiceDisconnected(arg0: ComponentName) {}
             }
 
+        // [FIX] Started (not only bound) foreground service, so downloads survive in background.
         fun startService() {
-            if (isServiceRunning) return
-            Intent(context.applicationContext, DownloadService::class.java).also { intent ->
-                context.applicationContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-            }
-        }
-
-        fun stopService() {
-            if (!isServiceRunning) return
             try {
-                isServiceRunning = false
-                context.applicationContext.run { unbindService(connection) }
+                androidx.core.content.ContextCompat.startForegroundService(
+                    context.applicationContext,
+                    Intent(context.applicationContext, DownloadService::class.java),
+                )
+                isServiceRunning = true
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
+
+        fun stopService() {
+            try {
+                isServiceRunning = false
+                context.applicationContext.stopService(
+                    Intent(context.applicationContext, DownloadService::class.java)
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        // [SIMPLIFIED] old bind-only implementation kept for reference:
+        // fun startService() { if (isServiceRunning) return; bindService(intent, connection, BIND_AUTO_CREATE) }
+        // fun stopService() { if (!isServiceRunning) return; unbindService(connection) }
 
         val privateDownloadDir: String
             get() =

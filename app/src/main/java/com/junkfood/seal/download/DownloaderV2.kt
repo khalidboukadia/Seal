@@ -103,7 +103,7 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
         scope.launch(Dispatchers.Default) {
             snapshotFlow
                 .onEach { doYourWork() }
-                .map { it.countRunning() }
+                .map { it.countActive() }
                 .distinctUntilChanged()
                 .collect { if (it > 0) App.startService() else App.stopService() }
         }
@@ -148,6 +148,14 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                     state.copy(downloadState = downloadState)
                 }
         taskList.forEach(::enqueue)
+    }
+
+    /** Tasks that still have work to do (also queued ones), so the service is not dropped between steps. */
+    private fun Map<Task, Task.State>.countActive(): Int = count { (_, state) ->
+        state.downloadState is Running ||
+            state.downloadState is FetchingInfo ||
+            state.downloadState == Idle ||
+            state.downloadState == ReadyWithInfo
     }
 
     private fun Map<Task, Task.State>.countRunning(): Int = count { (_, state) ->

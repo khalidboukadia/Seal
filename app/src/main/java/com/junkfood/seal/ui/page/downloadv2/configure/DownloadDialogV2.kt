@@ -561,6 +561,14 @@ private fun SimpleSharePage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // [SIMPLIFIED] Audio has no options: it is always the best quality, automatically.
+        if (qualityType == Audio) {
+            Text(
+                text = stringResource(R.string.quality) + ": " + stringResource(R.string.best_quality),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            )
+        } else
         FilledTonalButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = { onPresetEdit(qualityType) },
@@ -604,6 +612,12 @@ private fun SimpleSharePage(
                             preferences =
                                 preferences.copy(
                                     extractAudio = selectedType == Audio,
+                                    // [SIMPLIFIED] best audio, AAC/M4A: plays on every phone,
+                                    // headphones and speaker, no re-encoding (no quality loss)
+                                    useCustomAudioPreset = true,
+                                    audioFormat = com.junkfood.seal.util.M4A,
+                                    audioQuality = com.junkfood.seal.util.NOT_SPECIFIED,
+                                    convertAudio = false,
                                     // [SIMPLIFIED] always the most compatible video format (MP4)
                                     videoFormat = FORMAT_COMPATIBILITY,
                                 ),
