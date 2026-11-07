@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import org.koin.core.component.KoinComponent
 
 private const val TAG = "DownloaderV2"
@@ -244,6 +245,22 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
             }
     }
 
+    private val updateMutex = kotlinx.coroutines.sync.Mutex()
+    private var lastAutoUpdateAt = 0L
+
+    /** Updates yt-dlp (at most once every 30 min). Returns true if an update was installed. */
+    private suspend fun tryAutoUpdateYtDlp(): Boolean =
+        updateMutex.withLock {
+            val now = System.currentTimeMillis()
+            if (now - lastAutoUpdateAt < 30 * 60 * 1000L) return@withLock false
+            lastAutoUpdateAt = now
+            runCatching {
+                    com.junkfood.seal.util.UpdateUtil.updateYtDlp() ==
+                        YoutubeDL.UpdateStatus.DONE
+                }
+                .getOrDefault(false)
+        }
+
     private fun Task.prepare() {
         check(downloadState == Idle)
         if (type is TypeInfo.CustomCommand) {
@@ -274,6 +291,18 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                     }
                     .onFailure { throwable ->
                         if (throwable is YoutubeDL.CanceledException) {
+                            return@onFailure
+                        }
+                        // [FIX] Old yt-dlp vs. new YouTube ("Precondition check failed",
+                        // "Please sign in"): update the library automatically, once, and retry.
+                        val msg = throwable.message.orEmpty()
+                        val looksOutdated =
+                            msg.contains("Precondition check failed") ||
+                                msg.contains("Please sign in") ||
+                                msg.contains("HTTP Error 400")
+                        if (looksOutdated && tryAutoUpdateYtDlp()) {
+                            if (task.downloadState is Canceled) return@onFailure
+                            downloadState = Idle
                             return@onFailure
                         }
                         task.downloadState = Error(throwable = throwable, action = FetchInfo)
