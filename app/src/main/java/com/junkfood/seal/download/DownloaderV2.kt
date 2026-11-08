@@ -229,10 +229,31 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
     private fun doYourWork() {
         if (taskStateMap.countRunning() >= MAX_CONCURRENCY) return
 
+        // [FIX] Playlist items are processed strictly one at a time, in playlist order: an item is
+        // blocked while any item before it in the same playlist is still waiting or running.
+        fun isUnfinished(st: Task.DownloadState) =
+            st is Running || st is FetchingInfo || st == Idle || st == ReadyWithInfo
+
+        fun playlistIndexOf(task: Task): Int? = (task.type as? Task.TypeInfo.Playlist)?.index
+
+        fun isBlocked(task: Task): Boolean {
+            val myIndex = playlistIndexOf(task) ?: return false
+            return taskStateMap.entries.any { (other, otherState) ->
+                other !== task &&
+                    other.url == task.url &&
+                    (playlistIndexOf(other) ?: Int.MAX_VALUE) < myIndex &&
+                    isUnfinished(otherState.downloadState)
+            }
+        }
+
         taskStateMap.entries
-            .sortedBy { (_, state) -> state.downloadState }
-            .firstOrNull { (_, state) ->
-                state.downloadState == ReadyWithInfo || state.downloadState == Idle
+            .sortedWith(
+                compareBy<Map.Entry<Task, Task.State>>({ it.value.downloadState })
+                    .thenBy { playlistIndexOf(it.key) ?: Int.MAX_VALUE }
+            )
+            .firstOrNull { (task, state) ->
+                (state.downloadState == ReadyWithInfo || state.downloadState == Idle) &&
+                    !isBlocked(task)
             }
             ?.let { (task, state) ->
                 when (state.downloadState) {
@@ -300,10 +321,18 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                             msg.contains("Precondition check failed") ||
                                 msg.contains("Please sign in") ||
                                 msg.contains("HTTP Error 400")
-                        if (looksOutdated && tryAutoUpdateYtDlp()) {
-                            if (task.downloadState is Canceled) return@onFailure
-                            downloadState = Idle
-                            return@onFailure
+                        if (looksOutdated) {
+                            // 1) update yt-dlp once, 2) then try the other YouTube clients
+                            val updated = tryAutoUpdateYtDlp()
+                            val nextClient = DownloadUtil.youtubeClientIndex + 1
+                            val canTryNextClient =
+                                !updated && nextClient < DownloadUtil.YOUTUBE_CLIENT_FALLBACKS.size
+                            if (canTryNextClient) DownloadUtil.youtubeClientIndex = nextClient
+                            if (updated || canTryNextClient) {
+                                if (task.downloadState is Canceled) return@onFailure
+                                downloadState = Idle
+                                return@onFailure
+                            }
                         }
                         task.downloadState = Error(throwable = throwable, action = FetchInfo)
                         NotificationUtil.notifyError(

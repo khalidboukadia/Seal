@@ -547,7 +547,10 @@ private fun SimpleSharePage(
         remember(config) { mutableStateOf(config.downloadType?.takeIf { it in typeEntries } ?: Video) }
 
     // A full playlist is downloaded as video, so it uses the video quality settings.
-    val qualityType = if (selectedType == Audio) Audio else Video
+    // [FIX] A playlist can be downloaded as video or as audio, with its own quality choice.
+    var playlistAudio by remember { mutableStateOf(false) }
+    val audioMode = selectedType == Audio || (selectedType == Playlist && playlistAudio)
+    val qualityType = if (audioMode) Audio else Video
     val qualityText =
         if (qualityType == Audio) PreferenceStrings.getAudioPresetText(preferences)
         else PreferenceStrings.getVideoResolutionDesc(preferences.videoResolution)
@@ -559,10 +562,28 @@ private fun SimpleSharePage(
             onSelect = { selectedType = it },
         )
 
+        if (selectedType == Playlist) {
+            Spacer(modifier = Modifier.height(8.dp))
+            androidx.compose.foundation.layout.Row(
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+            ) {
+                androidx.compose.material3.FilterChip(
+                    selected = !playlistAudio,
+                    onClick = { playlistAudio = false },
+                    label = { Text(stringResource(R.string.video)) },
+                )
+                androidx.compose.material3.FilterChip(
+                    selected = playlistAudio,
+                    onClick = { playlistAudio = true },
+                    label = { Text(stringResource(R.string.audio)) },
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         // [SIMPLIFIED] Audio has no options: it is always the best quality, automatically.
-        if (qualityType == Audio) {
+        if (audioMode) {
             Text(
                 text = stringResource(R.string.quality) + ": " + stringResource(R.string.best_quality),
                 style = MaterialTheme.typography.titleMedium,
@@ -600,8 +621,12 @@ private fun SimpleSharePage(
                             url = url,
                             preferences =
                                 preferences.copy(
-                                    extractAudio = false,
+                                    extractAudio = playlistAudio,
                                     videoFormat = FORMAT_COMPATIBILITY,
+                                    useCustomAudioPreset = if (playlistAudio) true else preferences.useCustomAudioPreset,
+                                    audioFormat = if (playlistAudio) com.junkfood.seal.util.M4A else preferences.audioFormat,
+                                    audioQuality = if (playlistAudio) com.junkfood.seal.util.NOT_SPECIFIED else preferences.audioQuality,
+                                    convertAudio = if (playlistAudio) false else preferences.convertAudio,
                                 ),
                         )
                     )
