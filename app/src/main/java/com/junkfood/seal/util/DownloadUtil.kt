@@ -46,6 +46,29 @@ import java.util.Locale
 
 object DownloadUtil {
 
+    /**
+     * [FIX] Alternative YouTube "player clients" tried one after another when YouTube answers
+     * "Precondition check failed / Please sign in". Index 0 = yt-dlp default (no argument).
+     * Unknown client names are ignored by yt-dlp, so this is safe on any version.
+     */
+    val YOUTUBE_CLIENT_FALLBACKS =
+        listOf(
+            null,
+            "youtube:player_client=tv,mweb,web_safari",
+            "youtube:player_client=ios,android_vr,tv_simply",
+            "youtube:player_client=web_embedded,tv_embedded,mweb",
+        )
+
+    /** Index in [YOUTUBE_CLIENT_FALLBACKS] that last worked / is being tried. */
+    @Volatile var youtubeClientIndex = 0
+
+    private fun YoutubeDLRequest.applyYoutubeClient() {
+        YOUTUBE_CLIENT_FALLBACKS.getOrNull(youtubeClientIndex)?.let {
+            addOption("--extractor-args", it)
+        }
+    }
+
+
     object CookieScheme {
         const val NAME = "name"
         const val VALUE = "value"
@@ -146,6 +169,7 @@ object DownloadUtil {
         with(preferences) {
             val request =
                 YoutubeDLRequest(url).apply {
+                    applyYoutubeClient()
                     addOption("-o", BASENAME)
                     if (restrictFilenames) {
                         addOption("--restrict-filenames")
@@ -528,6 +552,8 @@ object DownloadUtil {
                     4 -> "res:720"
                     5 -> "res:480"
                     6 -> "res:360"
+                    8 -> "res:240"
+                    9 -> "res:144"
                     7 -> "+res"
                     else -> ""
                 }
@@ -677,7 +703,7 @@ object DownloadUtil {
                             Throwable(context.getString(R.string.fetch_info_error_msg))
                         )
                 }
-            val request = YoutubeDLRequest(url)
+            val request = YoutubeDLRequest(url).apply { applyYoutubeClient() }
             val pathBuilder = StringBuilder()
             val outputBuilder = StringBuilder()
 

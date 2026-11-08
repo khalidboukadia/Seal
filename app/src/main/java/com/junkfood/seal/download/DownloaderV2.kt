@@ -32,10 +32,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import org.koin.core.component.KoinComponent
 
 private const val TAG = "DownloaderV2"
@@ -102,7 +104,7 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
         scope.launch(Dispatchers.Default) {
             snapshotFlow
                 .onEach { doYourWork() }
-                .map { it.countRunning() }
+                .map { it.countActive() }
                 .distinctUntilChanged()
                 .collect { if (it > 0) App.startService() else App.stopService() }
         }
@@ -147,6 +149,14 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                     state.copy(downloadState = downloadState)
                 }
         taskList.forEach(::enqueue)
+    }
+
+    /** Tasks that still have work to do (also queued ones), so the service is not dropped between steps. */
+    private fun Map<Task, Task.State>.countActive(): Int = count { (_, state) ->
+        state.downloadState is Running ||
+            state.downloadState is FetchingInfo ||
+            state.downloadState == Idle ||
+            state.downloadState == ReadyWithInfo
     }
 
     private fun Map<Task, Task.State>.countRunning(): Int = count { (_, state) ->
@@ -219,10 +229,31 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
     private fun doYourWork() {
         if (taskStateMap.countRunning() >= MAX_CONCURRENCY) return
 
+        // [FIX] Playlist items are processed strictly one at a time, in playlist order: an item is
+        // blocked while any item before it in the same playlist is still waiting or running.
+        fun isUnfinished(st: Task.DownloadState) =
+            st is Running || st is FetchingInfo || st == Idle || st == ReadyWithInfo
+
+        fun playlistIndexOf(task: Task): Int? = (task.type as? Task.TypeInfo.Playlist)?.index
+
+        fun isBlocked(task: Task): Boolean {
+            val myIndex = playlistIndexOf(task) ?: return false
+            return taskStateMap.entries.any { (other, otherState) ->
+                other !== task &&
+                    other.url == task.url &&
+                    (playlistIndexOf(other) ?: Int.MAX_VALUE) < myIndex &&
+                    isUnfinished(otherState.downloadState)
+            }
+        }
+
         taskStateMap.entries
-            .sortedBy { (_, state) -> state.downloadState }
-            .firstOrNull { (_, state) ->
-                state.downloadState == ReadyWithInfo || state.downloadState == Idle
+            .sortedWith(
+                compareBy<Map.Entry<Task, Task.State>>({ it.value.downloadState })
+                    .thenBy { playlistIndexOf(it.key) ?: Int.MAX_VALUE }
+            )
+            .firstOrNull { (task, state) ->
+                (state.downloadState == ReadyWithInfo || state.downloadState == Idle) &&
+                    !isBlocked(task)
             }
             ?.let { (task, state) ->
                 when (state.downloadState) {
@@ -234,6 +265,22 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                 }
             }
     }
+
+    private val updateMutex = kotlinx.coroutines.sync.Mutex()
+    private var lastAutoUpdateAt = 0L
+
+    /** Updates yt-dlp (at most once every 30 min). Returns true if an update was installed. */
+    private suspend fun tryAutoUpdateYtDlp(): Boolean =
+        updateMutex.withLock {
+            val now = System.currentTimeMillis()
+            if (now - lastAutoUpdateAt < 30 * 60 * 1000L) return@withLock false
+            lastAutoUpdateAt = now
+            runCatching {
+                    com.junkfood.seal.util.UpdateUtil.updateYtDlp() ==
+                        YoutubeDL.UpdateStatus.DONE
+                }
+                .getOrDefault(false)
+        }
 
     private fun Task.prepare() {
         check(downloadState == Idle)
@@ -258,6 +305,7 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                         taskKey = id,
                     )
                     .onSuccess {
+                        if (task.downloadState is Canceled) return@onSuccess
                         info = it
                         downloadState = ReadyWithInfo
                         viewState = Task.ViewState.fromVideoInfo(it)
@@ -265,6 +313,26 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                     .onFailure { throwable ->
                         if (throwable is YoutubeDL.CanceledException) {
                             return@onFailure
+                        }
+                        // [FIX] Old yt-dlp vs. new YouTube ("Precondition check failed",
+                        // "Please sign in"): update the library automatically, once, and retry.
+                        val msg = throwable.message.orEmpty()
+                        val looksOutdated =
+                            msg.contains("Precondition check failed") ||
+                                msg.contains("Please sign in") ||
+                                msg.contains("HTTP Error 400")
+                        if (looksOutdated) {
+                            // 1) update yt-dlp once, 2) then try the other YouTube clients
+                            val updated = tryAutoUpdateYtDlp()
+                            val nextClient = DownloadUtil.youtubeClientIndex + 1
+                            val canTryNextClient =
+                                !updated && nextClient < DownloadUtil.YOUTUBE_CLIENT_FALLBACKS.size
+                            if (canTryNextClient) DownloadUtil.youtubeClientIndex = nextClient
+                            if (updated || canTryNextClient) {
+                                if (task.downloadState is Canceled) return@onFailure
+                                downloadState = Idle
+                                return@onFailure
+                            }
                         }
                         task.downloadState = Error(throwable = throwable, action = FetchInfo)
                         NotificationUtil.notifyError(
@@ -309,6 +377,7 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
                         },
                     )
                     .onSuccess { pathList ->
+                        if (downloadState is Canceled) return@onSuccess
                         downloadState = Completed(pathList.firstOrNull())
 
                         val text =
@@ -352,15 +421,25 @@ class DownloaderV2Impl(private val appContext: Context) : DownloaderV2, KoinComp
     private fun Task.cancelImpl(): Boolean {
         when (val preState = downloadState) {
             is DownloadState.Cancelable -> {
-                val res = YoutubeDL.destroyProcessById(preState.taskId)
-                if (res) {
-                    preState.job.cancel()
-                    val progress = if (preState is Running) preState.progress else null
-                    NotificationUtil.cancelNotification(notificationId)
-                    downloadState =
-                        DownloadState.Canceled(action = preState.action, progress = progress)
+                // [FIX] Cancel immediately on the first press. The state is switched to Canceled
+                // FIRST so that no late progress callback can post the notification again, and the
+                // task is reported as canceled even if yt-dlp has not registered its process yet.
+                val progress = if (preState is Running) preState.progress else null
+                downloadState = DownloadState.Canceled(action = preState.action, progress = progress)
+                NotificationUtil.cancelNotification(notificationId)
+                preState.job.cancel()
+                if (!YoutubeDL.destroyProcessById(preState.taskId)) {
+                    // The process is not running yet (still starting): keep trying for a few
+                    // seconds so it is killed the moment it appears. Stop if the task is resumed.
+                    scope.launch(Dispatchers.IO) {
+                        repeat(50) {
+                            delay(200)
+                            if (downloadState !is DownloadState.Canceled) return@launch
+                            if (YoutubeDL.destroyProcessById(preState.taskId)) return@launch
+                        }
+                    }
                 }
-                return res
+                return true
             }
             Idle -> {
                 downloadState = DownloadState.Canceled(action = FetchInfo)

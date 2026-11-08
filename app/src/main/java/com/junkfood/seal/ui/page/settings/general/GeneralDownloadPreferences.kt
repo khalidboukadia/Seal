@@ -177,61 +177,62 @@ fun GeneralDownloadPreferences(onNavigateBack: () -> Unit, navigateToTemplate: (
                             text = stringResource(id = R.string.custom_command_enabled_hint)
                         )
                     }
-                item {
-                    var ytdlpVersion by remember {
-                        mutableStateOf(
-                            YoutubeDL.getInstance().version(context.applicationContext)
-                                ?: context.getString(R.string.ytdlp_update)
-                        )
-                    }
-                    PreferenceItem(
-                        title = stringResource(id = R.string.ytdlp_update_action),
-                        description = ytdlpVersion,
-                        leadingIcon = {
-                            if (isUpdating) UpdateProgressIndicator()
-                            else {
-                                Icon(
-                                    imageVector = Icons.Outlined.Update,
-                                    contentDescription = null,
-                                    modifier =
-                                        Modifier.padding(start = 8.dp, end = 16.dp).size(24.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        },
-                        onClick = {
-                            scope.launch {
-                                runCatching {
-                                        isUpdating = true
-                                        UpdateUtil.updateYtDlp()
-                                        ytdlpVersion = YT_DLP_VERSION.getString()
-                                    }
-                                    .onFailure { th ->
-                                        th.printStackTrace()
-                                        ToastUtil.makeToastSuspend(
-                                            App.context.getString(R.string.yt_dlp_update_fail)
-                                        )
-                                    }
-                                    .onSuccess {
-                                        ToastUtil.makeToastSuspend(
-                                            context.getString(R.string.yt_dlp_up_to_date) +
-                                                " (${YT_DLP_VERSION.getString()})"
-                                        )
-                                    }
-                                isUpdating = false
-                            }
-                        },
-                        onClickLabel = stringResource(id = R.string.update),
-                        trailingIcon = {
-                            IconButton(onClick = { showYtdlpDialog = true }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Settings,
-                                    contentDescription = stringResource(id = R.string.open_settings),
-                                )
-                            }
-                        },
-                    )
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): yt-dlp update row (the home page has a one-tap update button)
+                // item {
+                    // var ytdlpVersion by remember {
+                        // mutableStateOf(
+                            // YoutubeDL.getInstance().version(context.applicationContext)
+                                // ?: context.getString(R.string.ytdlp_update)
+                        // )
+                    // }
+                    // PreferenceItem(
+                        // title = stringResource(id = R.string.ytdlp_update_action),
+                        // description = ytdlpVersion,
+                        // leadingIcon = {
+                            // if (isUpdating) UpdateProgressIndicator()
+                            // else {
+                                // Icon(
+                                    // imageVector = Icons.Outlined.Update,
+                                    // contentDescription = null,
+                                    // modifier =
+                                        // Modifier.padding(start = 8.dp, end = 16.dp).size(24.dp),
+                                    // tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                // )
+                            // }
+                        // },
+                        // onClick = {
+                            // scope.launch {
+                                // runCatching {
+                                        // isUpdating = true
+                                        // UpdateUtil.updateYtDlp()
+                                        // ytdlpVersion = YT_DLP_VERSION.getString()
+                                    // }
+                                    // .onFailure { th ->
+                                        // th.printStackTrace()
+                                        // ToastUtil.makeToastSuspend(
+                                            // App.context.getString(R.string.yt_dlp_update_fail)
+                                        // )
+                                    // }
+                                    // .onSuccess {
+                                        // ToastUtil.makeToastSuspend(
+                                            // context.getString(R.string.yt_dlp_up_to_date) +
+                                                // " (${YT_DLP_VERSION.getString()})"
+                                        // )
+                                    // }
+                                // isUpdating = false
+                            // }
+                        // },
+                        // onClickLabel = stringResource(id = R.string.update),
+                        // trailingIcon = {
+                            // IconButton(onClick = { showYtdlpDialog = true }) {
+                                // Icon(
+                                    // imageVector = Icons.Outlined.Settings,
+                                    // contentDescription = stringResource(id = R.string.open_settings),
+                                // )
+                            // }
+                        // },
+                    // )
+                // }
                 item {
                     PreferenceSwitch(
                         title = stringResource(id = R.string.download_notification),
@@ -259,139 +260,150 @@ fun GeneralDownloadPreferences(onNavigateBack: () -> Unit, navigateToTemplate: (
                     )
                 }
 
-                item {
-                    var configureBeforeDownload by CONFIGURE.booleanState
-                    PreferenceSwitch(
-                        title = stringResource(id = R.string.settings_before_download),
-                        description = stringResource(id = R.string.settings_before_download_desc),
-                        icon =
-                            if (configureBeforeDownload) Icons.Outlined.DoneAll
-                            else Icons.Outlined.RemoveDone,
-                        isChecked = configureBeforeDownload,
-                        onClick = {
-                            configureBeforeDownload = !configureBeforeDownload
-                            PreferenceUtil.updateValue(CONFIGURE, configureBeforeDownload)
-                        },
-                    )
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): settings-before-download switch
+                // item {
+                    // var configureBeforeDownload by CONFIGURE.booleanState
+                    // PreferenceSwitch(
+                        // title = stringResource(id = R.string.settings_before_download),
+                        // description = stringResource(id = R.string.settings_before_download_desc),
+                        // icon =
+                            // if (configureBeforeDownload) Icons.Outlined.DoneAll
+                            // else Icons.Outlined.RemoveDone,
+                        // isChecked = configureBeforeDownload,
+                        // onClick = {
+                            // configureBeforeDownload = !configureBeforeDownload
+                            // PreferenceUtil.updateValue(CONFIGURE, configureBeforeDownload)
+                        // },
+                    // )
+                // }
 
-                item {
-                    var thumbnailSwitch by remember { mutableStateOf(THUMBNAIL.getBoolean()) }
-                    PreferenceSwitch(
-                        title = stringResource(id = R.string.create_thumbnail),
-                        description = stringResource(id = R.string.create_thumbnail_summary),
-                        enabled = !isCustomCommandEnabled,
-                        icon = Icons.Outlined.Image,
-                        isChecked = thumbnailSwitch,
-                        onClick = {
-                            thumbnailSwitch = !thumbnailSwitch
-                            PreferenceUtil.updateValue(THUMBNAIL, thumbnailSwitch)
-                        },
-                    )
-                }
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(R.string.print_details),
-                        description = stringResource(R.string.print_details_desc),
-                        icon =
-                            if (displayErrorReport) Icons.Outlined.Print
-                            else Icons.Outlined.PrintDisabled,
-                        enabled = !isCustomCommandEnabled,
-                        onClick = {
-                            displayErrorReport = !displayErrorReport
-                            PreferenceUtil.updateValue(DEBUG, displayErrorReport)
-                        },
-                        isChecked = displayErrorReport,
-                    )
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): create thumbnail switch
+                // item {
+                    // var thumbnailSwitch by remember { mutableStateOf(THUMBNAIL.getBoolean()) }
+                    // PreferenceSwitch(
+                        // title = stringResource(id = R.string.create_thumbnail),
+                        // description = stringResource(id = R.string.create_thumbnail_summary),
+                        // enabled = !isCustomCommandEnabled,
+                        // icon = Icons.Outlined.Image,
+                        // isChecked = thumbnailSwitch,
+                        // onClick = {
+                            // thumbnailSwitch = !thumbnailSwitch
+                            // PreferenceUtil.updateValue(THUMBNAIL, thumbnailSwitch)
+                        // },
+                    // )
+                // }
+                // [SIMPLIFIED] disabled (commented out, not deleted): print details switch
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(R.string.print_details),
+                        // description = stringResource(R.string.print_details_desc),
+                        // icon =
+                            // if (displayErrorReport) Icons.Outlined.Print
+                            // else Icons.Outlined.PrintDisabled,
+                        // enabled = !isCustomCommandEnabled,
+                        // onClick = {
+                            // displayErrorReport = !displayErrorReport
+                            // PreferenceUtil.updateValue(DEBUG, displayErrorReport)
+                        // },
+                        // isChecked = displayErrorReport,
+                    // )
+                // }
 
-                item { PreferenceSubtitle(text = stringResource(id = R.string.privacy)) }
+                // [SIMPLIFIED] disabled (commented out, not deleted): privacy subtitle
+                // item { PreferenceSubtitle(text = stringResource(id = R.string.privacy)) }
 
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(R.string.private_mode),
-                        description = stringResource(R.string.private_mode_desc),
-                        icon =
-                            if (isPrivateModeEnabled) Icons.Outlined.HistoryToggleOff
-                            else Icons.Outlined.History,
-                        isChecked = isPrivateModeEnabled,
-                        enabled = !isCustomCommandEnabled,
-                        onClick = {
-                            isPrivateModeEnabled = !isPrivateModeEnabled
-                            PreferenceUtil.updateValue(PRIVATE_MODE, isPrivateModeEnabled)
-                        },
-                    )
-                }
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(R.string.disable_preview),
-                        description = stringResource(R.string.disable_preview_desc),
-                        icon =
-                            if (isPreviewDisabled) Icons.Outlined.VisibilityOff
-                            else Icons.Outlined.Visibility,
-                        isChecked = isPreviewDisabled,
-                        enabled = !isCustomCommandEnabled,
-                        onClick = {
-                            isPreviewDisabled = !isPreviewDisabled
-                            PreferenceUtil.updateValue(DISABLE_PREVIEW, isPreviewDisabled)
-                        },
-                    )
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): private mode switch
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(R.string.private_mode),
+                        // description = stringResource(R.string.private_mode_desc),
+                        // icon =
+                            // if (isPrivateModeEnabled) Icons.Outlined.HistoryToggleOff
+                            // else Icons.Outlined.History,
+                        // isChecked = isPrivateModeEnabled,
+                        // enabled = !isCustomCommandEnabled,
+                        // onClick = {
+                            // isPrivateModeEnabled = !isPrivateModeEnabled
+                            // PreferenceUtil.updateValue(PRIVATE_MODE, isPrivateModeEnabled)
+                        // },
+                    // )
+                // }
+                // [SIMPLIFIED] disabled (commented out, not deleted): disable preview switch
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(R.string.disable_preview),
+                        // description = stringResource(R.string.disable_preview_desc),
+                        // icon =
+                            // if (isPreviewDisabled) Icons.Outlined.VisibilityOff
+                            // else Icons.Outlined.Visibility,
+                        // isChecked = isPreviewDisabled,
+                        // enabled = !isCustomCommandEnabled,
+                        // onClick = {
+                            // isPreviewDisabled = !isPreviewDisabled
+                            // PreferenceUtil.updateValue(DISABLE_PREVIEW, isPreviewDisabled)
+                        // },
+                    // )
+                // }
 
-                item { PreferenceSubtitle(text = stringResource(R.string.advanced_settings)) }
-                item {
-                    PreferenceSwitch(
-                        title = stringResource(id = R.string.download_playlist),
-                        onClick = {
-                            downloadPlaylist = !downloadPlaylist
-                            PreferenceUtil.updateValue(PLAYLIST, downloadPlaylist)
-                        },
-                        icon = Icons.Outlined.PlaylistAddCheck,
-                        enabled = !isCustomCommandEnabled,
-                        description = stringResource(R.string.download_playlist_desc),
-                        isChecked = downloadPlaylist,
-                    )
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): advanced subtitle
+                // item { PreferenceSubtitle(text = stringResource(R.string.advanced_settings)) }
+                // [SIMPLIFIED] disabled (commented out, not deleted): download-playlist switch
+                // item {
+                    // PreferenceSwitch(
+                        // title = stringResource(id = R.string.download_playlist),
+                        // onClick = {
+                            // downloadPlaylist = !downloadPlaylist
+                            // PreferenceUtil.updateValue(PLAYLIST, downloadPlaylist)
+                        // },
+                        // icon = Icons.Outlined.PlaylistAddCheck,
+                        // enabled = !isCustomCommandEnabled,
+                        // description = stringResource(R.string.download_playlist_desc),
+                        // isChecked = downloadPlaylist,
+                    // )
+                // }
 
-                item {
-                    PreferenceSwitchWithDivider(
-                        title = stringResource(id = R.string.download_archive),
-                        onClick = {
-                            scope.launch(Dispatchers.IO) {
-                                archiveFileContent = context.getArchiveFile().readText()
-                                withContext(Dispatchers.Main) { showClearArchiveDialog = true }
-                            }
-                        },
-                        icon = Icons.Outlined.Archive,
-                        description = stringResource(R.string.download_archive_desc),
-                        isChecked = useDownloadArchive,
-                        onChecked = {
-                            useDownloadArchive = !useDownloadArchive
-                            DOWNLOAD_ARCHIVE.updateBoolean(useDownloadArchive)
-                        },
-                        enabled = isPermissionGranted,
-                    )
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): download archive
+                // item {
+                    // PreferenceSwitchWithDivider(
+                        // title = stringResource(id = R.string.download_archive),
+                        // onClick = {
+                            // scope.launch(Dispatchers.IO) {
+                                // archiveFileContent = context.getArchiveFile().readText()
+                                // withContext(Dispatchers.Main) { showClearArchiveDialog = true }
+                            // }
+                        // },
+                        // icon = Icons.Outlined.Archive,
+                        // description = stringResource(R.string.download_archive_desc),
+                        // isChecked = useDownloadArchive,
+                        // onChecked = {
+                            // useDownloadArchive = !useDownloadArchive
+                            // DOWNLOAD_ARCHIVE.updateBoolean(useDownloadArchive)
+                        // },
+                        // enabled = isPermissionGranted,
+                    // )
+                // }
 
-                item {
-                    PreferenceSwitchWithDivider(
-                        title = stringResource(R.string.sponsorblock),
-                        description = stringResource(R.string.sponsorblock_desc),
-                        icon = Icons.Outlined.MoneyOff,
-                        enabled = !isCustomCommandEnabled,
-                        isChecked = isSponsorBlockEnabled,
-                        onChecked = {
-                            isSponsorBlockEnabled = !isSponsorBlockEnabled
-                            PreferenceUtil.updateValue(SPONSORBLOCK, isSponsorBlockEnabled)
-                        },
-                        onClick = { showSponsorBlockDialog = true },
-                    )
-                }
+                // [SIMPLIFIED] disabled (commented out, not deleted): sponsorblock
+                // item {
+                    // PreferenceSwitchWithDivider(
+                        // title = stringResource(R.string.sponsorblock),
+                        // description = stringResource(R.string.sponsorblock_desc),
+                        // icon = Icons.Outlined.MoneyOff,
+                        // enabled = !isCustomCommandEnabled,
+                        // isChecked = isSponsorBlockEnabled,
+                        // onChecked = {
+                            // isSponsorBlockEnabled = !isSponsorBlockEnabled
+                            // PreferenceUtil.updateValue(SPONSORBLOCK, isSponsorBlockEnabled)
+                        // },
+                        // onClick = { showSponsorBlockDialog = true },
+                    // )
+                // }
 
-                if (downloadSubtitle)
-                    item {
-                        PreferenceInfo(text = stringResource(id = R.string.subtitle_sponsorblock))
-                    }
+                // [SIMPLIFIED] disabled (commented out, not deleted): sponsorblock/subtitle hint
+                // if (downloadSubtitle)
+                //     item {
+                //         PreferenceInfo(text = stringResource(id = R.string.subtitle_sponsorblock))
+                //     }
             }
         },
     )

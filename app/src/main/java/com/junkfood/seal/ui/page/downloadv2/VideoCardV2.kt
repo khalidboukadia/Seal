@@ -632,25 +632,28 @@ private fun ProgressButton(modifier: Modifier = Modifier, progress: Float, onCli
             label = "progress",
         )
     val background = ActionButtonContainerColor
+    // [SIMPLIFIED] stop button made 25% smaller so it is not pressed by mistake
+    val buttonSize = IconButtonSize * 0.75f
+    val stopIconSize = IconSize * 0.75f
 
     Box(
         modifier =
             modifier
-                .size(IconButtonSize)
+                .size(buttonSize)
                 .clip(CircleShape)
                 .drawBehind { drawCircle(background) }
                 .clickable(onClickLabel = stringResource(R.string.cancel), onClick = onClick)
     ) {
         if (progress < 0) {
             CircularProgressIndicator(
-                modifier = Modifier.size(IconButtonSize).align(Alignment.Center),
+                modifier = Modifier.size(buttonSize).align(Alignment.Center),
                 color = ActionButtonContentColor,
                 trackColor = Color.Transparent,
             )
         } else {
             CircularProgressIndicator(
                 { animatedProgress },
-                modifier = Modifier.size(IconButtonSize).align(Alignment.Center),
+                modifier = Modifier.size(buttonSize).align(Alignment.Center),
                 color = ActionButtonContentColor,
                 gapSize = 0.dp,
                 trackColor = Color.Transparent,
@@ -659,7 +662,7 @@ private fun ProgressButton(modifier: Modifier = Modifier, progress: Float, onCli
         Icon(
             imageVector = Icons.Rounded.Pause,
             contentDescription = null,
-            modifier = Modifier.align(Alignment.Center).size(IconSize),
+            modifier = Modifier.align(Alignment.Center).size(stopIconSize),
             tint = ActionButtonContentColor,
         )
     }

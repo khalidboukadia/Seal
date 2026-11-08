@@ -39,7 +39,8 @@ import com.junkfood.seal.util.UpdateUtil
 import com.junkfood.seal.util.VIDEO_DIRECTORY
 import com.junkfood.seal.util.YT_DLP_VERSION
 import com.tencent.mmkv.MMKV
-import com.yausername.aria2c.Aria2c
+// [SIMPLIFIED] aria2c removed to shrink the APK
+// import com.yausername.aria2c.Aria2c
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import java.io.File
@@ -90,7 +91,8 @@ class App : Application() {
             try {
                 YoutubeDL.init(this@App)
                 FFmpeg.init(this@App)
-                Aria2c.init(this@App)
+                // [SIMPLIFIED] aria2c removed to shrink the APK
+                // Aria2c.init(this@App)
                 DownloadUtil.getCookiesContentFromDatabase().getOrNull()?.let {
                     FileUtil.writeContentToFile(it, getCookiesFile())
                 }
@@ -143,22 +145,33 @@ class App : Application() {
                 override fun onServiceDisconnected(arg0: ComponentName) {}
             }
 
+        // [FIX] Started (not only bound) foreground service, so downloads survive in background.
         fun startService() {
-            if (isServiceRunning) return
-            Intent(context.applicationContext, DownloadService::class.java).also { intent ->
-                context.applicationContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-            }
-        }
-
-        fun stopService() {
-            if (!isServiceRunning) return
             try {
-                isServiceRunning = false
-                context.applicationContext.run { unbindService(connection) }
+                androidx.core.content.ContextCompat.startForegroundService(
+                    context.applicationContext,
+                    Intent(context.applicationContext, DownloadService::class.java),
+                )
+                isServiceRunning = true
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
+
+        fun stopService() {
+            try {
+                isServiceRunning = false
+                context.applicationContext.stopService(
+                    Intent(context.applicationContext, DownloadService::class.java)
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        // [SIMPLIFIED] old bind-only implementation kept for reference:
+        // fun startService() { if (isServiceRunning) return; bindService(intent, connection, BIND_AUTO_CREATE) }
+        // fun stopService() { if (!isServiceRunning) return; unbindService(connection) }
 
         val privateDownloadDir: String
             get() =

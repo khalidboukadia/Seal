@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import com.junkfood.seal.util.NotificationUtil
 import com.junkfood.seal.util.NotificationUtil.SERVICE_NOTIFICATION_ID
@@ -14,6 +15,46 @@ private const val TAG = "DownloadService"
 
 /** This `Service` does nothing */
 class DownloadService : Service() {
+
+    private var wakeLock: PowerManager.WakeLock? = null
+
+    // [FIX] Real started foreground service: it keeps the process alive while downloads run even
+    // when the user leaves the app (the old bind-only service gave no real protection, so Android
+    // killed the process and the task came back as "Canceled").
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        try {
+            val pendingIntent: PendingIntent =
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, MainActivity::class.java),
+                    PendingIntent.FLAG_IMMUTABLE,
+                )
+            startForeground(
+                SERVICE_NOTIFICATION_ID,
+                NotificationUtil.makeServiceNotification(pendingIntent),
+            )
+            if (wakeLock == null) {
+                wakeLock =
+                    (getSystemService(POWER_SERVICE) as PowerManager)
+                        .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "snapkhalid:download")
+                        .apply { setReferenceCounted(false) }
+            }
+            if (wakeLock?.isHeld != true) wakeLock?.acquire(6 * 60 * 60 * 1000L)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        try {
+            if (wakeLock?.isHeld == true) wakeLock?.release()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        super.onDestroy()
+    }
 
     override fun onBind(intent: Intent): IBinder {
         val pendingIntent: PendingIntent =

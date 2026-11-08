@@ -120,7 +120,8 @@ private const val INTERVAL_DAY = 86_400_000L
 private const val INTERVAL_WEEK = 86_400_000L * 7
 private const val INTERVAL_MONTH = 86_400_000L * 30
 
-const val DEFAULT_INTERVAL = INTERVAL_WEEK // every week
+// [SIMPLIFIED] daily instead of weekly: YouTube changes often and old yt-dlp fails
+const val DEFAULT_INTERVAL = INTERVAL_DAY
 
 val UpdateIntervalList =
     mapOf(
@@ -177,6 +178,9 @@ const val RES_720P = 4
 const val RES_480P = 5
 const val RES_360P = 6
 const val RES_LOWEST = 7
+// [SIMPLIFIED] added: extra low resolutions (new codes so saved settings keep their meaning)
+const val RES_240P = 8
+const val RES_144P = 9
 
 const val TEMPLATE_EXAMPLE = """--no-mtime -S "ext""""
 
@@ -539,6 +543,8 @@ object PreferenceStrings {
             4 -> "720p"
             5 -> "480p"
             6 -> "360p"
+            8 -> "240p"
+            9 -> "144p"
             7 -> stringResource(R.string.lowest_quality)
             else -> stringResource(R.string.best_quality)
         }
